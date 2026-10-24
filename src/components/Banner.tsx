@@ -31,7 +31,7 @@ const searchFields = [
 
 export default function Banner() {
   return (
-    <section className="  relative isolate flex min-h-[600px] flex-1 flex-col overflow-hidden bg-neutral-900 lg:min-h-[calc(100svh-6rem)]">
+    <section className=" relative isolate flex min-h-[600px] flex-1 flex-col overflow-hidden bg-neutral-900 lg:min-h-[calc(100svh-6rem)]">
       <Image
         src="/assets/Banner.png"
         alt="Aerial view of a coastal village nestled between green hills and a turquoise bay"

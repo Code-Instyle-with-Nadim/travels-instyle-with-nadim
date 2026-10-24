@@ -22,9 +22,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${merriweather.variable}  h-full antialiased`}
     >
       <body>
-        <main>
+    
+<main>
           <Navbar/>
+        
+            
         {children}
+      
         </main>
 
       </body>

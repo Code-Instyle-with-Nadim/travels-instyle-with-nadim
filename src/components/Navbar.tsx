@@ -40,8 +40,8 @@ function NavLinks({ activeHref }: { activeHref: string }) {
 
 export default function Navbar({ activeHref = "/" }: { activeHref?: string }) {
   return (
-    <header className=" mx-10 relative z-30 bg-white">
-      <nav aria-label="Main" className="px-4 sm:px-6 lg:px-10">
+    <header className=" relative z-100">
+      <nav aria-label="Main" className="px-4 sm:px-6 lg:px-10 ">
         <div className="flex h-16 items-center justify-between gap-4 lg:grid lg:h-24 lg:grid-cols-[1fr_auto_1fr]">
           <div className="hidden lg:block">
             <NavLinks activeHref={activeHref} />
