@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,8 +11,6 @@ import {
   MapPin,
   Star,
 } from "lucide-react"
-
-import { cn } from "@/lib/utils"
 
 type Destination = {
   slug: string
@@ -81,72 +79,75 @@ const destinations: Destination[] = [
 export default function FeaturedDestinations() {
   const trackRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(true)
 
-  const scrollToCard = (index: number) => {
-    const track = trackRef.current
-    const card = track?.children[index] as HTMLElement | undefined
-
-    if (!track || !card) return
-
-    const trackRect = track.getBoundingClientRect()
-    const cardRect = card.getBoundingClientRect()
-
-    track.scrollTo({
-      left: track.scrollLeft + (cardRect.left - trackRect.left),
-      behavior: "smooth",
-    })
-  }
-
-  const goTo = (index: number) => {
-    const nextIndex = Math.min(Math.max(index, 0), destinations.length - 1)
-
-    setActiveIndex(nextIndex)
-    scrollToCard(nextIndex)
-  }
-
-  const handleScroll = () => {
+  const updateFromScroll = useCallback(() => {
     const track = trackRef.current
 
     if (!track) return
 
-    const cards = Array.from(track.children) as HTMLElement[]
+    const card = track.querySelector<HTMLElement>("[data-destination-card]")
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0
+    const step = (card?.offsetWidth ?? 1) + gap
     const maxScrollLeft = track.scrollWidth - track.clientWidth
+    const isAtStart = track.scrollLeft <= 2
+    const isAtEnd = track.scrollLeft >= maxScrollLeft - 2
+
+    setCanScrollPrev(!isAtStart)
+    setCanScrollNext(!isAtEnd)
 
     if (maxScrollLeft <= 0) {
       setActiveIndex(0)
       return
     }
 
-    if (track.scrollLeft >= maxScrollLeft - 2) {
-      setActiveIndex(cards.length - 1)
+    if (isAtEnd) {
+      setActiveIndex(destinations.length - 1)
       return
     }
 
-    const trackLeft = track.getBoundingClientRect().left
-    let closestIndex = 0
-    let closestDistance = Number.POSITIVE_INFINITY
+    setActiveIndex(
+      Math.min(
+        destinations.length - 1,
+        Math.max(0, Math.round(track.scrollLeft / step))
+      )
+    )
+  }, [])
 
-    cards.forEach((card, index) => {
-      const distance = Math.abs(card.getBoundingClientRect().left - trackLeft)
+  useEffect(() => {
+    const track = trackRef.current
 
-      if (distance < closestDistance) {
-        closestDistance = distance
-        closestIndex = index
-      }
+    updateFromScroll()
+
+    if (!track) return
+
+    const observer = new ResizeObserver(updateFromScroll)
+    observer.observe(track)
+
+    return () => observer.disconnect()
+  }, [updateFromScroll])
+
+  const scrollByCard = (direction: 1 | -1) => {
+    const track = trackRef.current
+    const card = track?.querySelector<HTMLElement>("[data-destination-card]")
+
+    if (!track || !card) return
+
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0
+
+    track.scrollBy({
+      left: direction * (card.offsetWidth + gap),
+      behavior: "smooth",
     })
-
-    setActiveIndex(closestIndex)
   }
-
-  const isFirst = activeIndex === 0
-  const isLast = activeIndex === destinations.length - 1
 
   return (
     <section
       aria-labelledby="featured-destinations-heading"
       className="bg-white py-16 sm:py-20 lg:py-24"
     >
-      <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-10">
+      <div className="px-4 sm:px-6 lg:px-10">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2
@@ -171,23 +172,25 @@ export default function FeaturedDestinations() {
             />
           </Link>
         </div>
+      </div>
 
-        <div
-          ref={trackRef}
-          onScroll={handleScroll}
-          className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] sm:mt-12 sm:gap-6 lg:mt-14 [&::-webkit-scrollbar]:hidden"
-        >
+      <div
+        ref={trackRef}
+        onScroll={updateFromScroll}
+        className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth scroll-pl-4 pb-2 pl-4 pr-4 [scrollbar-width:none] sm:mt-12 sm:gap-6 sm:scroll-pl-6 sm:pl-6 sm:pr-6 lg:mt-14 lg:scroll-pl-10 lg:pl-10 lg:pr-10 [&::-webkit-scrollbar]:hidden"
+      >
           {destinations.map((destination) => (
             <article
               key={destination.slug}
-              className="group w-[86%] shrink-0 snap-start sm:w-[47%] lg:w-[42%]"
+              data-destination-card
+              className="group w-[86vw] shrink-0 snap-start sm:w-[47vw] lg:w-[40vw]"
             >
               <div className="relative aspect-[3/2] overflow-hidden bg-neutral-100">
                 <Image
                   src={destination.image}
                   alt={destination.imageAlt}
                   fill
-                  sizes="(min-width: 1024px) 42vw, (min-width: 640px) 47vw, 86vw"
+                  sizes="(min-width: 1024px) 40vw, (min-width: 640px) 47vw, 86vw"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
                 <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-sm bg-white px-2.5 py-1 text-xs font-semibold text-neutral-900 shadow-sm">
@@ -242,9 +245,9 @@ export default function FeaturedDestinations() {
               </div>
             </article>
           ))}
-        </div>
+      </div>
 
-        <div className="mt-10 flex items-center gap-5 sm:mt-12">
+      <div className="mt-10 flex items-center gap-5 px-4 sm:mt-12 sm:px-6 lg:px-10">
           <p
             aria-live="polite"
             className="min-w-9 text-lg font-light text-neutral-900 tabular-nums"
@@ -257,34 +260,23 @@ export default function FeaturedDestinations() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => goTo(activeIndex - 1)}
-              disabled={isFirst}
+              onClick={() => scrollByCard(-1)}
+              disabled={!canScrollPrev}
               aria-label="Show previous destinations"
-              className={cn(
-                "inline-flex size-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-400 transition-colors",
-                isFirst
-                  ? "cursor-not-allowed opacity-40"
-                  : "hover:border-neutral-900 hover:text-neutral-900"
-              )}
+              className="inline-flex size-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-400 transition-colors hover:border-neutral-900 hover:text-neutral-900 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.5} />
             </button>
             <button
               type="button"
-              onClick={() => goTo(activeIndex + 1)}
-              disabled={isLast}
+              onClick={() => scrollByCard(1)}
+              disabled={!canScrollNext}
               aria-label="Show next destinations"
-              className={cn(
-                "inline-flex size-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-400 transition-colors",
-                isLast
-                  ? "cursor-not-allowed opacity-40"
-                  : "hover:border-neutral-900 hover:text-neutral-900"
-              )}
+              className="inline-flex size-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-400 transition-colors hover:border-neutral-900 hover:text-neutral-900 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.5} />
             </button>
           </div>
-        </div>
       </div>
     </section>
   )

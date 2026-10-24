@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Merriweather,  } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const merriweather = Merriweather({
   variable: "--font-inter",
@@ -22,15 +23,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${merriweather.variable}  h-full antialiased`}
     >
       <body>
-    
-<main>
-          <Navbar/>
-        
-            
+        <Navbar />
         {children}
-      
-        </main>
-
+        <Footer/>
       </body>
     </html>
   );
