@@ -46,6 +46,27 @@ function FormField({ id, label, children, className }: FormFieldProps) {
 }
 
 export default function AddDestination() {
+  export function Basic() {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    console.log(data)
+    const response = await fetch("http://localhost:5000//add-dest",{
+      method: "POST",
+      body: JSON.stringify({data}),
+      headers: {
+          "Content-Type": "application/json",
+      }
+
+    })
+    const result = await response.json();
+
+    console.log(result)
+
+
+
+  }
   return (
     <main className="min-h-svh bg-white px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto w-full max-w-[900px]">
@@ -53,7 +74,7 @@ export default function AddDestination() {
           Add New Travel Package
         </h1>
 
-        <form className="mx-auto mt-10 w-full max-w-[560px] border border-neutral-100 bg-white p-6 shadow-[0_8px_32px_rgba(15,23,42,0.06)] sm:mt-12 sm:p-8">
+        <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-[560px] border border-neutral-100 bg-white p-6 shadow-[0_8px_32px_rgba(15,23,42,0.06)] sm:mt-12 sm:p-8">
           <div className="space-y-3.5">
             <FormField id="destination-name" label="Destination Name">
               <Input
